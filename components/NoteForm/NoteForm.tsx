@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createNote } from "@/lib/api";
 import { CreateNoteType } from "@/types/note";
 import { useRouter } from "next/navigation";
+import { useNoteDraftStore } from "@/lib/store/noteStore";
 
 const OrderSchema = Yup.object().shape({
   title: Yup.string()
@@ -19,15 +20,21 @@ const OrderSchema = Yup.object().shape({
     .required("This field is required!"),
 });
 
-// const initialValues: CreateNoteType = {
-//   title: "",
-//   content: "",
-//   tag: "Todo",
-// };
-
 const NoteForm = () => {
   const router = useRouter();
   const onClose = () => router.push("/notes/filter/all");
+  const { draft, setDraft, clearDraft } = useNoteDraftStore();
+
+  const handleChange = (
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    setDraft({
+      ...draft,
+      [event.target.name]: event.target.value,
+    });
+  };
 
   const fieldId = useId();
   const queryClient = useQueryClient();
@@ -35,32 +42,33 @@ const NoteForm = () => {
   const mutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
+      clearDraft();
       queryClient.invalidateQueries({ queryKey: ["noteList"] });
+      router.push("/notes/filter/all");
     },
     onError: (error) => {
       console.error("Error creating note:", error);
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const formData = new FormData(e.currentTarget);
+  const handleSubmit = async (formData: FormData) => {
     const values: CreateNoteType = {
-      title: formData.get("title") as string,
-      content: (formData.get("content") ?? "") as string,
+      title: formData.get("title") as CreateNoteType["title"],
+      content: (formData.get("content") ?? "") as CreateNoteType["content"],
       tag: formData.get("tag") as CreateNoteType["tag"],
     };
 
-    await OrderSchema.validate(values, { abortEarly: false });
-
-    await mutation.mutateAsync(values);
-    e.currentTarget.reset();
-    onClose();
+    try {
+      await OrderSchema.validate(values, { abortEarly: false });
+      await mutation.mutateAsync(values);
+      onClose();
+    } catch (err) {
+      console.error("Validation error:", err);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className={css.form}>
+    <form action={handleSubmit} className={css.form}>
       <fieldset className={css.formGroup}>
         <label htmlFor={`${fieldId}-title`}>Title</label>
         <input
@@ -70,6 +78,8 @@ const NoteForm = () => {
           id={`${fieldId}-title`}
           name="title"
           className={css.input}
+          defaultValue={draft?.title}
+          onChange={handleChange}
         />
       </fieldset>
       <fieldset className={css.formGroup}>
@@ -79,6 +89,8 @@ const NoteForm = () => {
           name="content"
           className={css.textarea}
           maxLength={500}
+          defaultValue={draft?.content}
+          onChange={handleChange}
         />
       </fieldset>
       <fieldset className={css.formGroup}>
@@ -88,6 +100,8 @@ const NoteForm = () => {
           id={`${fieldId}-tag`}
           name="tag"
           className={css.select}
+          defaultValue={draft?.tag}
+          onChange={handleChange}
         >
           <option value="Todo">Todo</option>
           <option value="Work">Work</option>
@@ -112,56 +126,3 @@ const NoteForm = () => {
   );
 };
 export default NoteForm;
-
-//  <Formik
-//       validationSchema={OrderSchema}
-//       initialValues={initialValues}
-//       onSubmit={handleSubmit}
-//     >
-//       <Form className={css.form}>
-//         <fieldset className={css.formGroup}>
-//           <label htmlFor={`${fieldId}-title`}>Title</label>
-//           <Field id={`${fieldId}-title`} name="title" className={css.input} />
-//           <ErrorMessage component="span" className={css.error} name="title" />
-//         </fieldset>
-//         <fieldset className={css.formGroup}>
-//           <label htmlFor={`${fieldId}-content`}>Content</label>
-//           <Field
-//             as="textarea"
-//             id={`${fieldId}-content`}
-//             name="content"
-//             className={css.textarea}
-//             rows={8}
-//           />
-//           <ErrorMessage component="span" className={css.error} name="content" />
-//         </fieldset>
-//         <fieldset className={css.formGroup}>
-//           <label htmlFor={`${fieldId}-tag`}>Tag</label>
-//           <Field
-//             as="select"
-//             id={`${fieldId}-tag`}
-//             name="tag"
-//             className={css.select}
-//           >
-//             <option value="Todo">Todo</option>
-//             <option value="Work">Work</option>
-//             <option value="Personal">Personal</option>
-//             <option value="Meeting">Meeting</option>
-//             <option value="Shopping">Shopping</option>
-//           </Field>
-//           <ErrorMessage component="span" className={css.error} name="tag" />
-//         </fieldset>
-//         <fieldset className={css.actions}>
-//           <button onClick={onClose} type="button" className={css.cancelButton}>
-//             Cancel
-//           </button>
-//           <button
-//             type="submit"
-//             className={css.submitButton}
-//             disabled={mutation.isPending}
-//           >
-//             {mutation.isPending ? "Creating..." : "Create note"}
-//           </button>
-//         </fieldset>
-//       </Form>
-//     </Formik>

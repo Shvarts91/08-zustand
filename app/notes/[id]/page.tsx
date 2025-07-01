@@ -12,8 +12,9 @@ interface NoteDetailsProps {
 
 export async function generateMetadata({ params }: NoteDetailsProps) {
   const { id } = await params;
+  const note = await getSingleNote(Number(id));
   return {
-    title: id,
+    title: note.title,
     description: `${id} Create by GoIT`,
     openGraph: {
       title: id,
