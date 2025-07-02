@@ -4,12 +4,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Create Note",
-  description: "Create by go It",
-  metadataBase: new URL("http://localhost:3000/notes/action/create"),
+  description: "Сторінка створення нової нотатки у застосунку NoteHub.",
+  metadataBase: new URL("http://localhost:3000"),
   openGraph: {
     title: "Create Note",
-    description: "Create by go It",
-    url: "/notes/action/create",
+    description: "Сторінка створення нової нотатки у застосунку NoteHub.",
+    url: "http://localhost:3000/notes/action/create",
     images: [
       {
         url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",

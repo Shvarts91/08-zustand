@@ -5,20 +5,23 @@ import {
   dehydrate,
 } from "@tanstack/react-query";
 import NoteDetailsClient from "./NoteDetails.client";
+import { Metadata } from "next";
 
 interface NoteDetailsProps {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: NoteDetailsProps) {
+export async function generateMetadata({
+  params,
+}: NoteDetailsProps): Promise<Metadata> {
   const { id } = await params;
   const note = await getSingleNote(Number(id));
   return {
     title: note.title,
-    description: `${id} Create by GoIT`,
+    description: note.content?.slice(0, 150),
     openGraph: {
-      title: id,
-      description: `${id} Create by GoIT`,
+      title: note.title,
+      description: note.content?.slice(0, 150),
       url: `/notes/${id}`,
       images: [
         {
